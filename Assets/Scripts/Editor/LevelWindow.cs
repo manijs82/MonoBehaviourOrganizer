@@ -11,7 +11,6 @@ public class LevelWindow : EditorWindow
     private SceneViewHandel _sceneViewHandel;
     private GuiHandel _guiHandel;
     private PlaceableGroup _placeableGroup;
-    private Transform _currentParent;
     private Vector2 _scrollPos;
 
     [MenuItem("Tools/Leveler")]
@@ -29,7 +28,7 @@ public class LevelWindow : EditorWindow
     private void InitHandel()
     {
         _sceneViewHandel = new SceneViewHandel();
-        _guiHandel = new GuiHandel(_windowData, _placeableGroup, _currentParent, Repaint, _so);
+        _guiHandel = new GuiHandel(_windowData, _placeableGroup, Repaint, _so);
         _sceneViewHandel.OnInputDown += PlacePrefab;
         _guiHandel.OnInputDown += TryPlacePrefab;
     }
@@ -82,22 +81,15 @@ public class LevelWindow : EditorWindow
         var prefab = _windowData.prefabs[_windowData.selectedPrefabIndex];
         if (prefab == null) return;
 
-        var go = PlacementUtility.PlacePrefab(prefab, _currentParent, hit);
+        var go = PlacementUtility.PlacePrefab(prefab, _guiHandel.currentParent, hit);
         PlacementUtility.OrientObject(_windowData, go.transform, hit.normal);
         _placeableGroup.AddObject(go);
     }
     
     private void TryPlacePrefab()
     {
-        if(!PlacementUtility.Raycast(_sceneViewHandel.SceneCam, out RaycastHit hit)) return;
-        
-        if (_windowData.prefabs == null) return;
-        var prefab = _windowData.prefabs[_windowData.selectedPrefabIndex];
-        if (prefab == null) return;
-
-        var go = PlacementUtility.PlacePrefab(prefab, _currentParent, hit);
-        PlacementUtility.OrientObject(_windowData, go.transform, hit.normal);
-        _placeableGroup.AddObject(go);
+        SceneView.lastActiveSceneView.Focus();
+        _sceneViewHandel.ReceiveInputFromOtherWindow();
     }
 
     private void OnGUI()

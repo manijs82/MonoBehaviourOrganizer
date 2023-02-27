@@ -8,12 +8,6 @@ public class SceneViewHandel
     
     private bool _canInvokeInput;
 
-    public Camera SceneCam
-    {
-        get;
-        private set;
-    }
-
     public SceneViewHandel()
     {
         SceneView.duringSceneGui += DuringSceneGUI;
@@ -21,22 +15,27 @@ public class SceneViewHandel
 
     public void Disable() => SceneView.duringSceneGui -= DuringSceneGUI;
 
+    public void ReceiveInputFromOtherWindow()
+    {
+        _canInvokeInput = true;
+    }
+
     private void DuringSceneGUI(SceneView scene)
     {
         if (Event.current.type == EventType.MouseMove)
             scene.Repaint();
 
-        SceneCam = scene.camera;
-        if (PlacementUtility.Raycast(SceneCam, out RaycastHit hitInfo))
+        if (PlacementUtility.Raycast(out RaycastHit hitInfo))
         {
             DrawDisc(hitInfo);
-            _canInvokeInput = CheckInput();
 
             if (_canInvokeInput)
             {
                 _canInvokeInput = false;
                 OnInputDown?.Invoke(hitInfo);
             }
+            
+            _canInvokeInput = CheckInput();
         }
     }
 

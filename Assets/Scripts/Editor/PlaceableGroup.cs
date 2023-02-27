@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEditor;
+using UnityEditor.Search;
 using UnityEngine;
 
 
@@ -103,7 +104,8 @@ public class PlaceableGroup
     private static void DrawObjectDetail(PlaceableObject obj)
     {
         GUI.enabled = false;
-        EditorGUILayout.ObjectField(obj, obj.GetType());
+        //EditorGUILayout.ObjectField(obj, obj.GetType());
+        EditorGUILayout.LabelField(SearchUtils.GetHierarchyPath(obj.gameObject, false));
         GUI.enabled = true;
         if (GUILayout.Button("Delete"))
         {

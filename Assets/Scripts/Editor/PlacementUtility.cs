@@ -1,7 +1,6 @@
 using UnityEditor;
 using UnityEngine;
 
-
 public static class PlacementUtility
 {
     public static PlaceableObject PlacePrefab(PlaceableObject prefab, Transform parent, RaycastHit hit)
@@ -21,14 +20,9 @@ public static class PlacementUtility
             transform.rotation = Quaternion.LookRotation(normal);
     }
 
-    public static bool Raycast(Camera cam, out RaycastHit hit)
+    public static bool Raycast(out RaycastHit hit)
     {
-        var ray = cam.ScreenPointToRay(MousePos());
+        Ray ray = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
         return Physics.Raycast(ray, out hit, 25);
-    }
-
-    public static Vector3 MousePos()
-    {
-        return new Vector3(Event.current.mousePosition.x, Screen.height - Event.current.mousePosition.y);
     }
 }

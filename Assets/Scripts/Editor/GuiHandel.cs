@@ -6,22 +6,22 @@ using UnityEngine;
 public class GuiHandel
 {
     public event Action OnInputDown; 
+    
+    public Transform currentParent;
 
     private LevelWindowData _windowData;
     private PlaceableGroup _placeableGroup;
-    private Transform _currentParent;
     private Action _repaintAction;
     private SerializedObject _so;
     private SerializedProperty _propPrefabs;
     private SerializedProperty _propOrientToNormal;
     private Vector2 _scrollPos;
 
-    public GuiHandel(LevelWindowData windowData, PlaceableGroup placeableGroup, Transform currentParent,
+    public GuiHandel(LevelWindowData windowData, PlaceableGroup placeableGroup,
         Action repaintAction, SerializedObject so)
     {
         _windowData = windowData;
         _placeableGroup = placeableGroup;
-        _currentParent = currentParent;
         _repaintAction = repaintAction;
         _so = so;
         _propPrefabs = _so.FindProperty(nameof(_windowData.prefabs));
@@ -34,7 +34,7 @@ public class GuiHandel
 
         EditorGUILayout.PropertyField(_propPrefabs);
         EditorGUILayout.PropertyField(_propOrientToNormal);
-        _currentParent = (Transform)EditorGUILayout.ObjectField("Parent", _currentParent, typeof(Transform), true);
+        currentParent = (Transform)EditorGUILayout.ObjectField("Parent", currentParent, typeof(Transform), true);
         EditorGUILayout.LabelField("Choose a Prefab from the List and Press C to Place");
         DrawPrefabSelectors();
 
