@@ -1,13 +1,16 @@
 using System.Linq;
 using UnityEditor;
+using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 
 public class LevelWindow : EditorWindow
 {
+    [SerializeField] TreeViewState treeViewState;
     private LevelWindowData _windowData;
 
     private SerializedObject _so;
 
+    private PlaceableTreeView _treeView;
     private SceneViewHandel _sceneViewHandel;
     private GuiHandel _guiHandel;
     private PlaceableGroup _placeableGroup;
@@ -31,6 +34,9 @@ public class LevelWindow : EditorWindow
         _guiHandel = new GuiHandel(_windowData, _placeableGroup, Repaint, _so);
         _sceneViewHandel.OnInputDown += PlacePrefab;
         _guiHandel.OnInputDown += TryPlacePrefab;
+
+        treeViewState ??= new TreeViewState();
+        _treeView = new PlaceableTreeView(treeViewState);
     }
 
     private void OnDisable()
@@ -85,7 +91,7 @@ public class LevelWindow : EditorWindow
         PlacementUtility.OrientObject(_windowData, go.transform, hit.normal);
         _placeableGroup.AddObject(go);
     }
-    
+
     private void TryPlacePrefab()
     {
         SceneView.lastActiveSceneView.Focus();
@@ -94,6 +100,16 @@ public class LevelWindow : EditorWindow
 
     private void OnGUI()
     {
-        _guiHandel.OnGUI();
+        using (new GUILayout.HorizontalScope())
+        {
+            GUILayout.Space(position.width / 3);
+
+            using (new GUILayout.VerticalScope())
+            {
+                _guiHandel.OnGUI();
+            }
+
+            _treeView.OnGUI(new Rect(0, 0, position.width / 3, position.height));
+        }
     }
 }
