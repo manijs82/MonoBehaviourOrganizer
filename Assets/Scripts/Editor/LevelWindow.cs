@@ -76,6 +76,8 @@ public class LevelWindow : EditorWindow
     private void InitGroups()
     {
         var objs = FindObjectsOfType<PlaceableObject>().ToList();
+        ParentPaths parentPaths = new ParentPaths();
+        parentPaths.AddPath(objs[0].gameObject);
         _placeableGroup = new PlaceableGroup();
         foreach (var placeableObject in objs)
             _placeableGroup.AddObject(placeableObject);
