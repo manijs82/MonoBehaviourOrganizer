@@ -5,12 +5,13 @@ using UnityEngine;
 
 public class ParentPaths
 {
-    private Tree<GameObjectPath> _tree;
+    private List<ParentTree> _tree;
+    private Dictionary<string, ParentTree> _objectsByPath;
 
     public ParentPaths()
     {
-        var rootItem = new GameObjectPath(null, "");
-        _tree = new Tree<GameObjectPath>(new Node<GameObjectPath>(rootItem));
+        _tree = new List<ParentTree>();
+        _objectsByPath = new Dictionary<string, ParentTree>();
     }
 
     public void AddPath(GameObject go)
@@ -20,11 +21,9 @@ public class ParentPaths
         GetFoldersFormStrings(new List<string>() { path });
     }
 
-    static List<Folder> GetFoldersFormStrings(List<string> strings)
+    private List<ParentTree> GetFoldersFormStrings(List<string> strings)
     {
-        var folders = new List<Folder>();
         strings.Sort(StringComparer.InvariantCultureIgnoreCase);
-        var folderByPath = new Dictionary<string, Folder>();
         foreach (var str in strings)
         {
             var paths = str.Split("/");
@@ -34,7 +33,7 @@ public class ParentPaths
             {
                 if (lastPath.EndsWith("/")) // we have a folder
                 {
-                    EnsureFolder(folders, folderByPath, lastPath);
+                    AddToParentTree(lastPath);
                 }
 
                 if (i < paths.Length - 2)
@@ -42,43 +41,61 @@ public class ParentPaths
             }
         }
 
-        ShowFolder(folders[0], 1);
-        return folders;
+        ShowFolders(_tree);
+        return _tree;
     }
 
-    private static Folder EnsureFolder(List<Folder> rootFolders, Dictionary<string, Folder> folderByPath,
-        string folderPath)
+    private List<ParentTree> GetFoldersFormStrings(string path)
     {
-        if (!folderByPath.TryGetValue(folderPath, out var folder))
+        var paths = path.Split("/");
+        var lastPath = paths[0];
+        lastPath += "/";
+        for (int i = 0; i < paths.Length; i++)
         {
-            var folderPathWithoutEndSlash = folderPath.TrimEnd('/');
+            if (lastPath.EndsWith("/")) // we have a folder
+            {
+                AddToParentTree(lastPath);
+            }
+
+            if (i < paths.Length - 2)
+                lastPath += paths[i + 1] + "/";
+        }
+
+        return _tree;
+    }
+
+    private ParentTree AddToParentTree(string objectPath)
+    {
+        if (!_objectsByPath.TryGetValue(objectPath, out var folder))
+        {
+            var folderPathWithoutEndSlash = objectPath.TrimEnd('/');
             var lastSlashPosition = folderPathWithoutEndSlash.LastIndexOf("/");
-            List<Folder> folders;
+            List<ParentTree> folders;
             string folderName;
             if (lastSlashPosition < 0) // it's a first level folder
             {
                 folderName = folderPathWithoutEndSlash;
-                folders = rootFolders;
+                folders = _tree;
             }
             else
             {
-                var parentFolderPath = folderPath.Substring(0, lastSlashPosition + 1);
-                folders = folderByPath[parentFolderPath].Folders;
+                var parentFolderPath = objectPath.Substring(0, lastSlashPosition + 1);
+                folders = _objectsByPath[parentFolderPath].Folders;
                 folderName = folderPathWithoutEndSlash.Substring(lastSlashPosition + 1);
             }
 
-            folder = new Folder
+            folder = new ParentTree
             {
                 Name = folderName
             };
             folders.Add(folder);
-            folderByPath.Add(folderPath, folder);
+            _objectsByPath.Add(objectPath, folder);
         }
 
         return folder;
     }
 
-    private static void ShowFolders(List<Folder> folders)
+    private static void ShowFolders(List<ParentTree> folders)
     {
         foreach (var folder in folders)
         {
@@ -86,33 +103,24 @@ public class ParentPaths
         }
     }
 
-    private static void ShowFolder(Folder folder, int indentation)
+    private static void ShowFolder(ParentTree parentTree, int indentation)
     {
         string folderIndentation = new string(' ', indentation);
         string fileIndentation = folderIndentation + "  ";
-        Debug.Log($"{folderIndentation}-{folder.Name}");
-        foreach (var file in folder.Files)
-        {
-            Debug.Log($"{fileIndentation}-{file.Name}");
-        }
+        Debug.Log($"{folderIndentation}-{parentTree.Name}");
 
-        foreach (var subfolder in folder.Folders)
+        foreach (var subfolder in parentTree.Folders)
         {
             ShowFolder(subfolder, indentation + 2);
         }
     }
 }
 
-public class Folder
+public class ParentTree
 {
     public string Name { get; set; }
-    public List<Folder> Folders { get; set; } = new List<Folder>();
-    public List<File> Files { get; set; } = new List<File>();
-}
-
-public class File
-{
-    public string Name { get; set; }
+    public List<ParentTree> Folders { get; set; } = new List<ParentTree>();
+    public List<GameObject> Files { get; set; } = new List<GameObject>();
 }
 
 public class GameObjectPath
