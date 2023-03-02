@@ -34,9 +34,6 @@ public class LevelWindow : EditorWindow
         _guiHandel = new GuiHandel(_windowData, _placeableGroup, Repaint, _so);
         _sceneViewHandel.OnInputDown += PlacePrefab;
         _guiHandel.OnInputDown += TryPlacePrefab;
-
-        treeViewState ??= new TreeViewState();
-        _treeView = new PlaceableTreeView(treeViewState);
     }
 
     private void OnDisable()
@@ -76,11 +73,12 @@ public class LevelWindow : EditorWindow
     private void InitGroups()
     {
         var objs = FindObjectsOfType<PlaceableObject>().ToList();
-        ParentPaths parentPaths = new ParentPaths();
-        parentPaths.AddPath(objs[0].gameObject);
         _placeableGroup = new PlaceableGroup();
         foreach (var placeableObject in objs)
             _placeableGroup.AddObject(placeableObject);
+        
+        treeViewState ??= new TreeViewState();
+        _treeView = new PlaceableTreeView(treeViewState);
     }
 
     private void PlacePrefab(RaycastHit hit)

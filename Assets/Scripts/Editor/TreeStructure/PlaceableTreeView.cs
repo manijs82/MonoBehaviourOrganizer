@@ -1,8 +1,14 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor.IMGUI.Controls;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlaceableTreeView : TreeView
 {
+    private ParentPaths _paths;
+    private int lastId = 1;
+
     public PlaceableTreeView(TreeViewState state) : base(state)
     {
         Reload();
@@ -10,22 +16,34 @@ public class PlaceableTreeView : TreeView
 
     protected override TreeViewItem BuildRoot()
     {
-        var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
-        var allItems = new List<TreeViewItem>
+        return new TreeViewItem { id = 0, depth = -1 };
+    }
+
+    protected override IList<TreeViewItem> BuildRows(TreeViewItem root)
+    {
+        var rows = GetRows() ?? new List<TreeViewItem>(200);
+
+        _paths = new ParentPaths();
+        var objs = Object.FindObjectsOfType<PlaceableObject>().ToList();
+        _paths.AddObjects(objs);
+
+        rows.Clear();
+        SetupTree(_paths.Tree, root, rows);
+
+        SetupDepthsFromParentsAndChildren(root);
+
+        return rows;
+    }
+
+    private void SetupTree(List<ParentTree> parents, TreeViewItem root, IList<TreeViewItem> rows)
+    {
+        foreach (var tree in parents)
         {
-            new() { id = 1, depth = 0, displayName = "Animals" },
-            new() { id = 2, depth = 1, displayName = "Mammals" },
-            new() { id = 3, depth = 2, displayName = "Tiger" },
-            new() { id = 4, depth = 2, displayName = "Elephant" },
-            new() { id = 5, depth = 2, displayName = "Okapi" },
-            new() { id = 6, depth = 2, displayName = "Armadillo" },
-            new() { id = 7, depth = 1, displayName = "Reptiles" },
-            new() { id = 8, depth = 2, displayName = "Crocodile" },
-            new() { id = 9, depth = 2, displayName = "Lizard" }
-        };
-
-        SetupParentsAndChildrenFromDepths(root, allItems);
-
-        return root;
+            lastId++;
+            var treeViewItem = new TreeViewItem { id = lastId, displayName = tree.Name };
+            root.AddChild(treeViewItem);
+            rows.Add(treeViewItem);
+            SetupTree(tree.Parents, treeViewItem, rows);
+        }
     }
 }
