@@ -100,16 +100,15 @@ public class LevelWindow : EditorWindow
 
     private void OnGUI()
     {
-        using (new GUILayout.HorizontalScope())
-        {
-            GUILayout.Space(position.width / 3);
+        _guiHandel.OnGUI();
 
-            using (new GUILayout.VerticalScope())
-            {
-                _guiHandel.OnGUI();
-            }
-
-            _treeView.OnGUI(new Rect(0, 0, position.width / 3, position.height));
-        }
+        _treeView.OnGUI(new Rect(0, GUILayoutUtility.GetLastRect().y + 22, position.width, position.height));
+    }
+    
+    void OnHierarchyChange()
+    {
+        if (_treeView != null)
+            _treeView.Reload();
+        Repaint ();
     }
 }

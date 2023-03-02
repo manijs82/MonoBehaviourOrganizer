@@ -38,9 +38,9 @@ public class GuiHandel
         EditorGUILayout.LabelField("Choose a Prefab from the List and Press C to Place");
         DrawPrefabSelectors();
 
-        _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.ExpandWidth(true));
-        _placeableGroup.OnGui();
-        EditorGUILayout.EndScrollView();
+        //_scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.ExpandWidth(true));
+        //_placeableGroup.OnGui();
+        //EditorGUILayout.EndScrollView();
 
         _so.ApplyModifiedProperties();
         _repaintAction();

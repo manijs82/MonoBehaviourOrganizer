@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEditor.Search;
 using UnityEngine;
@@ -7,6 +6,7 @@ public class ParentPaths
 {
     public List<ParentTree> Tree;
     private Dictionary<string, ParentTree> _objectsByPath;
+    private int _lastId = 1;
 
     public ParentPaths()
     {
@@ -14,16 +14,28 @@ public class ParentPaths
         _objectsByPath = new Dictionary<string, ParentTree>();
     }
 
-    public List<ParentTree> AddObjects(List<PlaceableObject> gos)
+    public ParentTree GetParentTreeById(int id, List<ParentTree> roots)
     {
-        foreach (var go in gos) 
-            AddObject(go.gameObject);
+        foreach (var parentTree in roots)
+        {
+            if (parentTree.id == id)
+                return parentTree;
 
-        ShowFolders(Tree);
-        return Tree;
+            var tree = GetParentTreeById(id, parentTree.parents);
+            if(tree != null)
+                return tree;
+        }
+
+        return null;
     }
 
-    public void AddObject(GameObject go)
+    public void AddObjects(List<PlaceableObject> gos)
+    {
+        foreach (var go in gos)
+            AddObject(go.gameObject);
+    }
+
+    private void AddObject(GameObject go)
     {
         var path = SearchUtils.GetHierarchyPath(go, false);
         path = path.Remove(0, 1);
@@ -32,14 +44,15 @@ public class ParentPaths
         lastPath += "/";
         for (int i = 0; i < paths.Length; i++)
         {
+            if(i == paths.Length - 1)
+            {
+                AddObjectToParent(go, lastPath);
+            }
             if (lastPath.EndsWith("/"))
             {
                 AddParentTree(lastPath);
             }
-            else
-            {
-                AddObjectToParent(go, lastPath);
-            }
+            
 
             if (i < paths.Length - 2)
                 lastPath += paths[i + 1] + "/";
@@ -48,11 +61,11 @@ public class ParentPaths
 
     private void AddObjectToParent(GameObject go, string objectPath)
     {
-        if (_objectsByPath.TryGetValue(objectPath, out var parent)) 
-            parent.Children.Add(go);
+        if (_objectsByPath.TryGetValue(objectPath, out var parent))
+            parent.children.Add(go);
     }
 
-    private ParentTree AddParentTree(string objectPath)
+    private void AddParentTree(string objectPath)
     {
         if (!_objectsByPath.TryGetValue(objectPath, out var folder))
         {
@@ -68,19 +81,19 @@ public class ParentPaths
             else
             {
                 var parentFolderPath = objectPath.Substring(0, lastSlashPosition + 1);
-                folders = _objectsByPath[parentFolderPath].Parents;
+                folders = _objectsByPath[parentFolderPath].parents;
                 folderName = folderPathWithoutEndSlash.Substring(lastSlashPosition + 1);
             }
 
+            _lastId++;
             folder = new ParentTree
             {
-                Name = folderName
+                name = folderName,
+                id = _lastId
             };
             folders.Add(folder);
             _objectsByPath.Add(objectPath, folder);
         }
-
-        return folder;
     }
 
     private static void ShowFolders(List<ParentTree> folders)
@@ -94,9 +107,9 @@ public class ParentPaths
     private static void ShowFolder(ParentTree parentTree, int indentation)
     {
         string folderIndentation = new string(' ', indentation);
-        Debug.Log($"{folderIndentation}-{parentTree.Name}");
+        Debug.Log($"{folderIndentation}-{parentTree.name}");
 
-        foreach (var subfolder in parentTree.Parents)
+        foreach (var subfolder in parentTree.parents)
         {
             ShowFolder(subfolder, indentation + 2);
         }
@@ -105,7 +118,8 @@ public class ParentPaths
 
 public class ParentTree
 {
-    public string Name { get; set; }
-    public List<ParentTree> Parents { get; set; } = new();
-    public List<GameObject> Children { get; set; } = new();
+    public string name { get; set; }
+    public int id { get; set; }
+    public List<ParentTree> parents { get; set; } = new();
+    public List<GameObject> children { get; set; } = new();
 }
