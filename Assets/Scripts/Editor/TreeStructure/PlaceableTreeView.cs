@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEditor.Search;
@@ -10,6 +11,8 @@ public class PlaceableTreeView : TreeView
     private ParentPaths _paths;
     private List<GameObject> _currentList;
     private IList<int> _selectedIds;
+    private bool _showFoldout;
+    private Vector2 _scrollPos;
 
     public PlaceableTreeView(TreeViewState state) : base(state)
     {
@@ -24,6 +27,7 @@ public class PlaceableTreeView : TreeView
 
     protected override bool CanMultiSelect(TreeViewItem item) => false;
 
+
     protected override IList<TreeViewItem> BuildRows(TreeViewItem root)
     {
         var rows = GetRows() ?? new List<TreeViewItem>(200);
@@ -36,7 +40,7 @@ public class PlaceableTreeView : TreeView
         SetupTree(_paths.Tree, root, rows);
         SetupDepthsFromParentsAndChildren(root);
 
-        if (_selectedIds != null) 
+        if (_selectedIds != null)
             _currentList = _paths.GetParentTreeById(_selectedIds[0], _paths.Tree).children;
 
         return rows;
@@ -70,7 +74,9 @@ public class PlaceableTreeView : TreeView
 
             using (new GUILayout.VerticalScope())
             {
+                _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.ExpandWidth(true));
                 DrawList();
+                EditorGUILayout.EndScrollView();
             }
 
             base.OnGUI(treeRect);
@@ -87,27 +93,63 @@ public class PlaceableTreeView : TreeView
                 objectsToRemove.Add(gameObject);
                 continue;
             }
+
             using (new GUILayout.HorizontalScope())
             {
-                GUI.enabled = false;
-                //EditorGUILayout.ObjectField(obj, obj.GetType());
-                EditorGUILayout.LabelField(SearchUtils.GetHierarchyPath(gameObject, false));
-                GUI.enabled = true;
-                if (GUILayout.Button("Delete"))
-                {
-                    Undo.DestroyObjectImmediate(gameObject);
-                }
+                DrawGameObject(gameObject);
+            }
 
-                if (GUILayout.Button("Select")) Selection.activeGameObject = gameObject;
-                if (GUILayout.Button("Focus"))
+            if (_showFoldout)
+            {
+                var placeComponent = gameObject.GetComponents<Component>();
+                foreach (var component in placeComponent)
                 {
-                    Selection.activeGameObject = gameObject;
-                    SceneView.FrameLastActiveSceneView();
+                    var methods = component.GetType()
+                        .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                    foreach (var method in methods)
+                    {
+                        var parameters = method.GetParameters();
+                        if (parameters.Length != 1) continue;
+
+                        var param = parameters[0];
+                        if (param.ParameterType == typeof(float))
+                        {
+                            EditorGUILayout.LabelField(method.Name);
+                            method.Invoke(component, new object[] { EditorGUILayout.Slider(1, 0, 1) });
+                        }
+                        if (param.ParameterType == typeof(Vector3))
+                        {
+                            EditorGUILayout.LabelField(method.Name);
+                            EditorGUILayout.Vector3Field(param.Name, Vector3.one);
+                        }
+                    }
                 }
             }
         }
 
-        foreach (var gameObject in objectsToRemove) 
+        foreach (var gameObject in objectsToRemove)
             _currentList.Remove(gameObject);
+    }
+
+    private void DrawGameObject(GameObject gameObject)
+    {
+        GUI.enabled = false;
+        //EditorGUILayout.ObjectField(obj, obj.GetType());
+        //EditorGUILayout.LabelField(SearchUtils.GetHierarchyPath(gameObject, false));
+
+        _showFoldout = EditorGUILayout.Foldout(_showFoldout, SearchUtils.GetHierarchyPath(gameObject, false));
+
+        GUI.enabled = true;
+        if (GUILayout.Button("Delete"))
+        {
+            Undo.DestroyObjectImmediate(gameObject);
+        }
+
+        if (GUILayout.Button("Select")) Selection.activeGameObject = gameObject;
+        if (GUILayout.Button("Focus"))
+        {
+            Selection.activeGameObject = gameObject;
+            SceneView.FrameLastActiveSceneView();
+        }
     }
 }
