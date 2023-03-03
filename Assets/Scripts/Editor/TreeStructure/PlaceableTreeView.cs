@@ -9,6 +9,7 @@ public class PlaceableTreeView : TreeView
 {
     private ParentPaths _paths;
     private List<GameObject> _currentList;
+    private IList<int> _selectedIds;
 
     public PlaceableTreeView(TreeViewState state) : base(state)
     {
@@ -33,8 +34,10 @@ public class PlaceableTreeView : TreeView
 
         rows.Clear();
         SetupTree(_paths.Tree, root, rows);
-
         SetupDepthsFromParentsAndChildren(root);
+
+        if (_selectedIds != null) 
+            _currentList = _paths.GetParentTreeById(_selectedIds[0], _paths.Tree).children;
 
         return rows;
     }
@@ -53,7 +56,8 @@ public class PlaceableTreeView : TreeView
     protected override void SelectionChanged(IList<int> selectedIds)
     {
         base.SelectionChanged(selectedIds);
-        _currentList = _paths.GetParentTreeById(selectedIds[0], _paths.Tree).children;
+        _selectedIds = selectedIds;
+        _currentList = _paths.GetParentTreeById(_selectedIds[0], _paths.Tree).children;
     }
 
     public override void OnGUI(Rect rect)
@@ -75,8 +79,14 @@ public class PlaceableTreeView : TreeView
 
     private void DrawList()
     {
+        var objectsToRemove = new List<GameObject>();
         foreach (var gameObject in _currentList)
         {
+            if (gameObject == null)
+            {
+                objectsToRemove.Add(gameObject);
+                continue;
+            }
             using (new GUILayout.HorizontalScope())
             {
                 GUI.enabled = false;
@@ -96,5 +106,8 @@ public class PlaceableTreeView : TreeView
                 }
             }
         }
+
+        foreach (var gameObject in objectsToRemove) 
+            _currentList.Remove(gameObject);
     }
 }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor.Search;
 using UnityEngine;
 
@@ -31,6 +32,7 @@ public class ParentPaths
 
     public void AddObjects(List<PlaceableObject> gos)
     {
+        gos = gos.OrderBy(g => g.transform.parent.gameObject.name).ToList();
         foreach (var go in gos)
             AddObject(go.gameObject);
     }

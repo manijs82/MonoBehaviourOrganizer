@@ -13,7 +13,6 @@ public class LevelWindow : EditorWindow
     private PlaceableTreeView _treeView;
     private SceneViewHandel _sceneViewHandel;
     private GuiHandel _guiHandel;
-    private PlaceableGroup _placeableGroup;
     private Vector2 _scrollPos;
 
     [MenuItem("Tools/Leveler")]
@@ -31,7 +30,7 @@ public class LevelWindow : EditorWindow
     private void InitHandel()
     {
         _sceneViewHandel = new SceneViewHandel();
-        _guiHandel = new GuiHandel(_windowData, _placeableGroup, Repaint, _so);
+        _guiHandel = new GuiHandel(_windowData, Repaint, _so);
         _sceneViewHandel.OnInputDown += PlacePrefab;
         _guiHandel.OnInputDown += TryPlacePrefab;
     }
@@ -47,7 +46,7 @@ public class LevelWindow : EditorWindow
     {
         _so = new SerializedObject(_windowData);
 
-        InitGroups();
+        InitTreeView();
     }
 
     private bool GetWindowData()
@@ -70,13 +69,8 @@ public class LevelWindow : EditorWindow
         return false;
     }
 
-    private void InitGroups()
+    private void InitTreeView()
     {
-        var objs = FindObjectsOfType<PlaceableObject>().ToList();
-        _placeableGroup = new PlaceableGroup();
-        foreach (var placeableObject in objs)
-            _placeableGroup.AddObject(placeableObject);
-        
         treeViewState ??= new TreeViewState();
         _treeView = new PlaceableTreeView(treeViewState);
     }
@@ -89,7 +83,7 @@ public class LevelWindow : EditorWindow
 
         var go = PlacementUtility.PlacePrefab(prefab, _guiHandel.currentParent, hit);
         PlacementUtility.OrientObject(_windowData, go.transform, hit.normal);
-        _placeableGroup.AddObject(go);
+        _treeView?.Reload();
     }
 
     private void TryPlacePrefab()
@@ -107,8 +101,7 @@ public class LevelWindow : EditorWindow
     
     void OnHierarchyChange()
     {
-        if (_treeView != null)
-            _treeView.Reload();
+        _treeView?.Reload();
         Repaint ();
     }
 }

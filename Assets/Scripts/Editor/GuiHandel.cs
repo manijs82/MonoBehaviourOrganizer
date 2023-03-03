@@ -10,18 +10,15 @@ public class GuiHandel
     public Transform currentParent;
 
     private LevelWindowData _windowData;
-    private PlaceableGroup _placeableGroup;
     private Action _repaintAction;
     private SerializedObject _so;
     private SerializedProperty _propPrefabs;
     private SerializedProperty _propOrientToNormal;
     private Vector2 _scrollPos;
 
-    public GuiHandel(LevelWindowData windowData, PlaceableGroup placeableGroup,
-        Action repaintAction, SerializedObject so)
+    public GuiHandel(LevelWindowData windowData, Action repaintAction, SerializedObject so)
     {
         _windowData = windowData;
-        _placeableGroup = placeableGroup;
         _repaintAction = repaintAction;
         _so = so;
         _propPrefabs = _so.FindProperty(nameof(_windowData.prefabs));
@@ -37,10 +34,6 @@ public class GuiHandel
         currentParent = (Transform)EditorGUILayout.ObjectField("Parent", currentParent, typeof(Transform), true);
         EditorGUILayout.LabelField("Choose a Prefab from the List and Press C to Place");
         DrawPrefabSelectors();
-
-        //_scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.ExpandWidth(true));
-        //_placeableGroup.OnGui();
-        //EditorGUILayout.EndScrollView();
 
         _so.ApplyModifiedProperties();
         _repaintAction();
