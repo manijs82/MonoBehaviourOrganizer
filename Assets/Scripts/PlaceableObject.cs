@@ -2,10 +2,16 @@ using UnityEngine;
 
 public class PlaceableObject : MonoBehaviour
 {
-    [Range(0,1)][SerializeField] private float range;
+    [SerializeField] private float range;
 
-    public void SetRange(float range)
+    public float Range
     {
-        this.range = range;
+        get => range;
+        set => range = value;
+    }
+
+    public void SetRangeToFive()
+    {
+        Range = 5;
     }
 }

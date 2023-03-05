@@ -10,8 +10,8 @@ public class PlaceableTreeView : TreeView
 {
     private ParentPaths _paths;
     private List<GameObject> _currentList;
+    private bool[] _foldouts;
     private IList<int> _selectedIds;
-    private bool _showFoldout;
     private Vector2 _scrollPos;
 
     public PlaceableTreeView(TreeViewState state) : base(state)
@@ -41,7 +41,7 @@ public class PlaceableTreeView : TreeView
         SetupDepthsFromParentsAndChildren(root);
 
         if (_selectedIds != null)
-            _currentList = _paths.GetParentTreeById(_selectedIds[0], _paths.Tree).children;
+            SetGameObjectList();
 
         return rows;
     }
@@ -61,7 +61,13 @@ public class PlaceableTreeView : TreeView
     {
         base.SelectionChanged(selectedIds);
         _selectedIds = selectedIds;
+        SetGameObjectList();
+    }
+
+    private void SetGameObjectList()
+    {
         _currentList = _paths.GetParentTreeById(_selectedIds[0], _paths.Tree).children;
+        _foldouts = new bool[_currentList.Count];
     }
 
     public override void OnGUI(Rect rect)
@@ -86,6 +92,8 @@ public class PlaceableTreeView : TreeView
     private void DrawList()
     {
         var objectsToRemove = new List<GameObject>();
+
+        int i = 0;
         foreach (var gameObject in _currentList)
         {
             if (gameObject == null)
@@ -96,48 +104,64 @@ public class PlaceableTreeView : TreeView
 
             using (new GUILayout.HorizontalScope())
             {
-                DrawGameObject(gameObject);
+                DrawGameObject(gameObject, i);
             }
 
-            if (_showFoldout)
+            if (_foldouts[i])
             {
                 var placeComponent = gameObject.GetComponents<Component>();
                 foreach (var component in placeComponent)
                 {
                     var methods = component.GetType()
                         .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                    var props = component.GetType()
+                        .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
                     foreach (var method in methods)
                     {
                         var parameters = method.GetParameters();
+                        if (parameters.Length == 0 && method.ReturnType == typeof(void))
+                        {
+                            if (GUILayout.Button(method.Name))
+                            {
+                                method.Invoke(component, null);
+                            }
+                            continue;
+                        }
                         if (parameters.Length != 1) continue;
 
                         var param = parameters[0];
-                        if (param.ParameterType == typeof(float))
+                        if (param.ParameterType == typeof(float) && !method.IsSpecialName)
                         {
                             EditorGUILayout.LabelField(method.Name);
                             method.Invoke(component, new object[] { EditorGUILayout.Slider(1, 0, 1) });
                         }
-                        if (param.ParameterType == typeof(Vector3))
+                    }
+                    foreach (var prop in props)
+                    {
+                        if(!prop.CanRead && !prop.CanWrite) continue;
+
+                        if (prop.PropertyType == typeof(float))
                         {
-                            EditorGUILayout.LabelField(method.Name);
-                            EditorGUILayout.Vector3Field(param.Name, Vector3.one);
+                            prop.SetValue(component, EditorGUILayout.FloatField(prop.Name, (float)prop.GetValue(component)));
                         }
                     }
                 }
             }
+
+            i++;
         }
 
         foreach (var gameObject in objectsToRemove)
             _currentList.Remove(gameObject);
     }
 
-    private void DrawGameObject(GameObject gameObject)
+    private void DrawGameObject(GameObject gameObject, int index)
     {
         GUI.enabled = false;
         //EditorGUILayout.ObjectField(obj, obj.GetType());
         //EditorGUILayout.LabelField(SearchUtils.GetHierarchyPath(gameObject, false));
 
-        _showFoldout = EditorGUILayout.Foldout(_showFoldout, SearchUtils.GetHierarchyPath(gameObject, false));
+        _foldouts[index] = EditorGUILayout.Foldout(_foldouts[index], SearchUtils.GetHierarchyPath(gameObject, false));
 
         GUI.enabled = true;
         if (GUILayout.Button("Delete"))
