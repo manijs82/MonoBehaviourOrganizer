@@ -116,35 +116,8 @@ public class PlaceableTreeView : TreeView
                         .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
                     var props = component.GetType()
                         .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                    foreach (var method in methods)
-                    {
-                        var parameters = method.GetParameters();
-                        if (parameters.Length == 0 && method.ReturnType == typeof(void))
-                        {
-                            if (GUILayout.Button(method.Name))
-                            {
-                                method.Invoke(component, null);
-                            }
-                            continue;
-                        }
-                        if (parameters.Length != 1) continue;
-
-                        var param = parameters[0];
-                        if (param.ParameterType == typeof(float) && !method.IsSpecialName)
-                        {
-                            EditorGUILayout.LabelField(method.Name);
-                            method.Invoke(component, new object[] { EditorGUILayout.Slider(1, 0, 1) });
-                        }
-                    }
-                    foreach (var prop in props)
-                    {
-                        if(!prop.CanRead && !prop.CanWrite) continue;
-
-                        if (prop.PropertyType == typeof(float))
-                        {
-                            prop.SetValue(component, EditorGUILayout.FloatField(prop.Name, (float)prop.GetValue(component)));
-                        }
-                    }
+                    foreach (var method in methods) ReflectionGuiUtils.MethodGui(component, method);
+                    foreach (var prop in props) ReflectionGuiUtils.PropertyGui(component, prop);
                 }
             }
 

@@ -6,15 +6,16 @@ using UnityEngine;
 public class GuiHandel
 {
     public event Action OnInputDown; 
-    
-    public Transform currentParent;
 
     private LevelWindowData _windowData;
     private Action _repaintAction;
     private SerializedObject _so;
     private SerializedProperty _propPrefabs;
     private SerializedProperty _propOrientToNormal;
-    private Vector2 _scrollPos;
+
+    private TabMode _tabMode;
+    private PlacerTab _placerTab;
+    private PrefabsTab _prefabsTab;
 
     public GuiHandel(LevelWindowData windowData, Action repaintAction, SerializedObject so)
     {
@@ -23,17 +24,24 @@ public class GuiHandel
         _so = so;
         _propPrefabs = _so.FindProperty(nameof(_windowData.prefabs));
         _propOrientToNormal = _so.FindProperty(nameof(_windowData.orientToNormal));
+        _tabMode = (TabMode) EditorPrefs.GetInt("SelectedTab", 0);
+
+        _placerTab = new PlacerTab(_windowData, _propOrientToNormal);
+        _prefabsTab = new PrefabsTab(_propPrefabs);
     }
 
     public void OnGUI()
     {
         _so.Update();
 
-        EditorGUILayout.PropertyField(_propPrefabs);
-        EditorGUILayout.PropertyField(_propOrientToNormal);
-        currentParent = (Transform)EditorGUILayout.ObjectField("Parent", currentParent, typeof(Transform), true);
-        EditorGUILayout.LabelField("Choose a Prefab from the List and Press C to Place");
-        DrawPrefabSelectors();
+        DrawTab();
+
+        EditorGUI.BeginChangeCheck();
+        _tabMode = (TabMode) EditorGUI.EnumPopup(new Rect(0, Screen.height - 50, Screen.width, 22), _tabMode);
+        if (EditorGUI.EndChangeCheck())
+        {
+            EditorPrefs.SetInt("SelectedTab", (int) _tabMode);
+        }
 
         _so.ApplyModifiedProperties();
         _repaintAction();
@@ -45,22 +53,22 @@ public class GuiHandel
         }
     }
 
-    private void DrawPrefabSelectors()
+    private void DrawTab()
     {
-        EditorGUILayout.Space();
-        if (_windowData.prefabs == null) return;
-        using (new EditorGUILayout.HorizontalScope())
+        switch (_tabMode)
         {
-            foreach (var prefab in _windowData.prefabs)
-            {
-                if (prefab == null) continue;
-                GUIStyle style = new(GUI.skin.GetStyle("Button"));
-                if (_windowData.selectedPrefabIndex == _windowData.prefabs.IndexOf(prefab))
-                    style.fontStyle = FontStyle.BoldAndItalic;
-
-                if (GUILayout.Button(prefab.name, style))
-                    _windowData.selectedPrefabIndex = _windowData.prefabs.IndexOf(prefab);
-            }
+            case TabMode.PrefabTab:
+                _prefabsTab.OnGui();
+                break;
+            case TabMode.PlacerTab:
+                _placerTab.OnGui();
+                break;
         }
     }
+}
+
+public enum TabMode
+{
+    PrefabTab,
+    PlacerTab
 }

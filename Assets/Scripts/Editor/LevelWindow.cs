@@ -1,19 +1,16 @@
-using System.Linq;
+using System;
 using UnityEditor;
-using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 
 public class LevelWindow : EditorWindow
 {
-    [SerializeField] TreeViewState treeViewState;
+    public static event Action HierarchyChange;
+    public static Transform Parent;
+    
     private LevelWindowData _windowData;
-
     private SerializedObject _so;
-
-    private PlaceableTreeView _treeView;
     private SceneViewHandel _sceneViewHandel;
     private GuiHandel _guiHandel;
-    private Vector2 _scrollPos;
 
     [MenuItem("Tools/Leveler")]
     private static void CreateWindow() =>
@@ -45,8 +42,6 @@ public class LevelWindow : EditorWindow
     private void InitSo()
     {
         _so = new SerializedObject(_windowData);
-
-        InitTreeView();
     }
 
     private bool GetWindowData()
@@ -69,21 +64,14 @@ public class LevelWindow : EditorWindow
         return false;
     }
 
-    private void InitTreeView()
-    {
-        treeViewState ??= new TreeViewState();
-        _treeView = new PlaceableTreeView(treeViewState);
-    }
-
     private void PlacePrefab(RaycastHit hit)
     {
         if (_windowData.prefabs == null) return;
         var prefab = _windowData.prefabs[_windowData.selectedPrefabIndex];
         if (prefab == null) return;
 
-        var go = PlacementUtility.PlacePrefab(prefab, _guiHandel.currentParent, hit);
+        var go = PlacementUtility.PlacePrefab(prefab, Parent, hit);
         PlacementUtility.OrientObject(_windowData, go.transform, hit.normal);
-        _treeView?.Reload();
     }
 
     private void TryPlacePrefab()
@@ -95,13 +83,11 @@ public class LevelWindow : EditorWindow
     private void OnGUI()
     {
         _guiHandel.OnGUI();
-
-        _treeView.OnGUI(new Rect(0, GUILayoutUtility.GetLastRect().y + 22, position.width, position.height));
     }
     
     void OnHierarchyChange()
     {
-        _treeView?.Reload();
+        HierarchyChange?.Invoke();
         Repaint ();
     }
 }
