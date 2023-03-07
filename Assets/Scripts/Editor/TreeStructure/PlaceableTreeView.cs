@@ -3,20 +3,23 @@ using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
-using UnityEditor.Search;
 using UnityEngine;
 
 public class PlaceableTreeView : TreeView
 {
     private ParentPaths _paths;
     private List<GameObject> _currentList;
-    private bool[] _foldouts;
+    private bool[] _objectListFoldouts;
+    private Dictionary<GameObject, Component[]> _objectComponents;
+    private Dictionary<GameObject, bool[]> _objectComponentFoldouts;
     private IList<int> _selectedIds;
     private Vector2 _scrollPos;
 
     public PlaceableTreeView(TreeViewState state) : base(state)
     {
         _currentList = new List<GameObject>();
+        _objectComponents = new Dictionary<GameObject, Component[]>();
+        _objectComponentFoldouts = new Dictionary<GameObject, bool[]>();
         Reload();
     }
 
@@ -67,7 +70,7 @@ public class PlaceableTreeView : TreeView
     private void SetGameObjectList()
     {
         _currentList = _paths.GetParentTreeById(_selectedIds[0], _paths.Tree).children;
-        _foldouts = new bool[_currentList.Count];
+        _objectListFoldouts = new bool[_currentList.Count];
     }
 
     public override void OnGUI(Rect rect)
@@ -107,18 +110,30 @@ public class PlaceableTreeView : TreeView
                 DrawGameObject(gameObject, i);
             }
 
-            if (_foldouts[i])
+            if (_objectListFoldouts[i])
             {
-                var placeComponent = gameObject.GetComponents<Component>();
-                foreach (var component in placeComponent)
+                EditorGUI.indentLevel++;
+                int compIndex = 0;
+                foreach (var component in _objectComponents[gameObject])
                 {
-                    var methods = component.GetType()
-                        .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                    var props = component.GetType()
-                        .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                    foreach (var method in methods) ReflectionGuiUtils.MethodGui(component, method);
-                    foreach (var prop in props) ReflectionGuiUtils.PropertyGui(component, prop);
+                    _objectComponentFoldouts[gameObject][compIndex] = 
+                        EditorGUILayout.Foldout(_objectComponentFoldouts[gameObject][compIndex],
+                            ObjectNames.NicifyVariableName(component.GetType().Name));
+                    
+                    if(_objectComponentFoldouts[gameObject][compIndex])
+                    {
+                        var methods = component.GetType()
+                            .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                        var props = component.GetType()
+                            .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                        foreach (var method in methods) ReflectionGuiUtils.MethodGui(component, method);
+                        foreach (var prop in props) ReflectionGuiUtils.PropertyGui(component, prop);
+                    }
+
+                    compIndex++;
                 }
+                EditorGUI.indentLevel--;
+                EditorGUILayout.Space();
             }
 
             i++;
@@ -131,10 +146,23 @@ public class PlaceableTreeView : TreeView
     private void DrawGameObject(GameObject gameObject, int index)
     {
         GUI.enabled = false;
-        //EditorGUILayout.ObjectField(obj, obj.GetType());
-        //EditorGUILayout.LabelField(SearchUtils.GetHierarchyPath(gameObject, false));
 
-        _foldouts[index] = EditorGUILayout.Foldout(_foldouts[index], SearchUtils.GetHierarchyPath(gameObject, false));
+        EditorGUI.BeginChangeCheck();
+        _objectListFoldouts[index] = EditorGUILayout.Foldout(_objectListFoldouts[index], gameObject.name);
+        if (EditorGUI.EndChangeCheck())
+        {
+            if (_objectListFoldouts[index])
+            {
+                var components = gameObject.GetComponents<Component>();
+                _objectComponents.Add(gameObject, components);
+                _objectComponentFoldouts.Add(gameObject, new bool[components.Length]);
+            }
+            else
+            {
+                _objectComponents.Remove(gameObject);
+                _objectComponentFoldouts.Remove(gameObject);
+            }
+        }
 
         GUI.enabled = true;
         if (GUILayout.Button("Delete"))

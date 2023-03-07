@@ -1,3 +1,4 @@
+using System;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
@@ -6,6 +7,9 @@ public static class ReflectionGuiUtils
 {
     public static void MethodGui(Component component, MethodInfo method)
     {
+        var attribute = Attribute.GetCustomAttribute(method, typeof(LevelerMethodAttribute));
+        if(attribute == null) return;
+        
         var parameters = method.GetParameters();
         if (parameters.Length == 0 && method.ReturnType == typeof(void))
         {
@@ -25,6 +29,9 @@ public static class ReflectionGuiUtils
 
     public static void PropertyGui(Component component, PropertyInfo property)
     {
+        var attribute = Attribute.GetCustomAttribute(property, typeof(LevelerPropertyAttribute));
+        if(attribute == null) return;
+        
         if(!property.CanRead && !property.CanWrite) return;
 
         if (property.PropertyType == typeof(float))
