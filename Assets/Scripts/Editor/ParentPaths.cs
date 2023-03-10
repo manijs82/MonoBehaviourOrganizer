@@ -30,15 +30,23 @@ public class ParentPaths
         return null;
     }
 
-    public void AddObjects(List<PlaceableObject> gos)
+    public bool AddObjects(List<PlaceableObject> gos)
     {
+        bool anyAdded = false;
         gos = gos.OrderBy(g => g.transform.parent.gameObject.name).ToList();
         foreach (var go in gos)
-            AddObject(go.gameObject);
+        {
+            if (AddObject(go.gameObject))
+                if (!anyAdded) anyAdded = true;
+        }
+
+        return anyAdded;
     }
 
-    private void AddObject(GameObject go)
+    private bool AddObject(GameObject go)
     {
+        bool didAdd = false;
+        
         var path = SearchUtils.GetHierarchyPath(go, false);
         path = path.Remove(0, 1);
         var paths = path.Split("/");
@@ -48,54 +56,62 @@ public class ParentPaths
         {
             if(i == paths.Length - 1)
             {
-                AddObjectToParent(go, lastPath);
+                if (AddObjectToParent(go, lastPath))
+                    didAdd = true;
             }
             if (lastPath.EndsWith("/"))
             {
-                AddParentTree(lastPath);
+                if (AddParentTree(lastPath))
+                    didAdd = true;
             }
             
 
             if (i < paths.Length - 2)
                 lastPath += paths[i + 1] + "/";
         }
+
+        return didAdd;
     }
 
-    private void AddObjectToParent(GameObject go, string objectPath)
+    private bool AddObjectToParent(GameObject go, string objectPath)
     {
-        if (_objectsByPath.TryGetValue(objectPath, out var parent))
-            parent.children.Add(go);
+        if (!_objectsByPath.TryGetValue(objectPath, out var parent)) return false;
+
+        if (parent.children.Contains(go)) return false;
+        parent.children.Add(go);
+        return true;
+
     }
 
-    private void AddParentTree(string objectPath)
+    private bool AddParentTree(string objectPath)
     {
-        if (!_objectsByPath.TryGetValue(objectPath, out var folder))
+        if (_objectsByPath.TryGetValue(objectPath, out var folder)) return false;
+        
+        var folderPathWithoutEndSlash = objectPath.TrimEnd('/');
+        var lastSlashPosition = folderPathWithoutEndSlash.LastIndexOf("/");
+        List<ParentTree> folders;
+        string folderName;
+        if (lastSlashPosition < 0)
         {
-            var folderPathWithoutEndSlash = objectPath.TrimEnd('/');
-            var lastSlashPosition = folderPathWithoutEndSlash.LastIndexOf("/");
-            List<ParentTree> folders;
-            string folderName;
-            if (lastSlashPosition < 0)
-            {
-                folderName = folderPathWithoutEndSlash;
-                folders = Tree;
-            }
-            else
-            {
-                var parentFolderPath = objectPath.Substring(0, lastSlashPosition + 1);
-                folders = _objectsByPath[parentFolderPath].parents;
-                folderName = folderPathWithoutEndSlash.Substring(lastSlashPosition + 1);
-            }
-
-            _lastId++;
-            folder = new ParentTree
-            {
-                name = folderName,
-                id = _lastId
-            };
-            folders.Add(folder);
-            _objectsByPath.Add(objectPath, folder);
+            folderName = folderPathWithoutEndSlash;
+            folders = Tree;
         }
+        else
+        {
+            var parentFolderPath = objectPath.Substring(0, lastSlashPosition + 1);
+            folders = _objectsByPath[parentFolderPath].parents;
+            folderName = folderPathWithoutEndSlash.Substring(lastSlashPosition + 1);
+        }
+
+        _lastId++;
+        folder = new ParentTree
+        {
+            name = folderName,
+            id = _lastId
+        };
+        folders.Add(folder);
+        _objectsByPath.Add(objectPath, folder);
+        return true;
     }
 
     private static void ShowFolders(List<ParentTree> folders)

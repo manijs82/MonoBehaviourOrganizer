@@ -22,22 +22,22 @@ public class PlaceableTreeView : TreeView
         _objectComponentFoldouts = new Dictionary<GameObject, bool[]>();
         Reload();
     }
+    
+    protected override bool CanMultiSelect(TreeViewItem item) => false;
 
     protected override TreeViewItem BuildRoot()
     {
         return new TreeViewItem { id = 0, depth = -1 };
     }
 
-    protected override bool CanMultiSelect(TreeViewItem item) => false;
-
-
     protected override IList<TreeViewItem> BuildRows(TreeViewItem root)
     {
         var rows = GetRows() ?? new List<TreeViewItem>(200);
 
-        _paths = new ParentPaths();
+        _paths ??= new ParentPaths();
         var objs = Object.FindObjectsOfType<PlaceableObject>().ToList();
-        _paths.AddObjects(objs);
+        if (!_paths.AddObjects(objs))
+            return rows;
 
         rows.Clear();
         SetupTree(_paths.Tree, root, rows);
@@ -110,28 +110,27 @@ public class PlaceableTreeView : TreeView
                 DrawGameObject(gameObject, i);
             }
 
-            if (_objectListFoldouts[i])
+            if (_objectListFoldouts[i] && _objectComponents.ContainsKey(gameObject))
             {
                 EditorGUI.indentLevel++;
                 int compIndex = 0;
                 foreach (var component in _objectComponents[gameObject])
                 {
-                    _objectComponentFoldouts[gameObject][compIndex] = 
+                    _objectComponentFoldouts[gameObject][compIndex] =
                         EditorGUILayout.Foldout(_objectComponentFoldouts[gameObject][compIndex],
-                            ObjectNames.NicifyVariableName(component.GetType().Name));
-                    
-                    if(_objectComponentFoldouts[gameObject][compIndex])
+                            component.GetPrettyName());
+
+                    if (_objectComponentFoldouts[gameObject][compIndex])
                     {
-                        var methods = component.GetType()
-                            .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                        var props = component.GetType()
-                            .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                        var methods = component.GetMethods();
+                        var props = component.GetProperties();
                         foreach (var method in methods) ReflectionGuiUtils.MethodGui(component, method);
                         foreach (var prop in props) ReflectionGuiUtils.PropertyGui(component, prop);
                     }
 
                     compIndex++;
                 }
+
                 EditorGUI.indentLevel--;
                 EditorGUILayout.Space();
             }
@@ -140,7 +139,11 @@ public class PlaceableTreeView : TreeView
         }
 
         foreach (var gameObject in objectsToRemove)
+        {
+            if (_objectComponents.ContainsKey(gameObject)) _objectComponents.Remove(gameObject);
+            if (_objectComponentFoldouts.ContainsKey(gameObject)) _objectComponentFoldouts.Remove(gameObject);
             _currentList.Remove(gameObject);
+        }
     }
 
     private void DrawGameObject(GameObject gameObject, int index)
@@ -154,19 +157,32 @@ public class PlaceableTreeView : TreeView
             if (_objectListFoldouts[index])
             {
                 var components = gameObject.GetComponents<Component>();
-                _objectComponents.Add(gameObject, components);
-                _objectComponentFoldouts.Add(gameObject, new bool[components.Length]);
+                var validComponents = new List<Component>();
+
+                foreach (var component in components)
+                {
+                    var methods = component.GetMethods();
+                    var props = component.GetProperties();
+                    if (methods.HasAttribute() || props.HasAttribute())
+                        validComponents.Add(component);
+                }
+
+                var componentArray = validComponents.ToArray();
+                _objectComponents.TryAdd(gameObject, componentArray);
+                _objectComponentFoldouts.TryAdd(gameObject, new bool[componentArray.Length]);
             }
             else
             {
-                _objectComponents.Remove(gameObject);
-                _objectComponentFoldouts.Remove(gameObject);
+                if (_objectComponents.ContainsKey(gameObject)) _objectComponents.Remove(gameObject);
+                if (_objectComponentFoldouts.ContainsKey(gameObject)) _objectComponentFoldouts.Remove(gameObject);
             }
         }
 
         GUI.enabled = true;
         if (GUILayout.Button("Delete"))
         {
+            if (_objectComponents.ContainsKey(gameObject)) _objectComponents.Remove(gameObject);
+            if (_objectComponentFoldouts.ContainsKey(gameObject)) _objectComponentFoldouts.Remove(gameObject);
             Undo.DestroyObjectImmediate(gameObject);
         }
 
