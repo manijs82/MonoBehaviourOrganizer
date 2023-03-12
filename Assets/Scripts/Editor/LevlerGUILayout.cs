@@ -3,7 +3,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-public static class ReflectionGuiUtils
+public static class LevlerGUILayout
 {
     public static void MethodGui(Component component, MethodInfo method)
     {

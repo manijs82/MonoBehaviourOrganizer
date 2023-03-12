@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
@@ -124,8 +123,8 @@ public class PlaceableTreeView : TreeView
                     {
                         var methods = component.GetMethods();
                         var props = component.GetProperties();
-                        foreach (var method in methods) ReflectionGuiUtils.MethodGui(component, method);
-                        foreach (var prop in props) ReflectionGuiUtils.PropertyGui(component, prop);
+                        foreach (var method in methods) LevlerGUILayout.MethodGui(component, method);
+                        foreach (var prop in props) LevlerGUILayout.PropertyGui(component, prop);
                     }
 
                     compIndex++;
