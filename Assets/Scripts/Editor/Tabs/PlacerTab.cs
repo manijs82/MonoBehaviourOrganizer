@@ -21,7 +21,7 @@ public class PlacerTab : WindowTab
     private void InitTreeView()
     {
         treeViewState ??= new TreeViewState();
-        _treeView ??= new PlaceableTreeView(treeViewState);
+        _treeView ??= new PlaceableTreeView(treeViewState, _windowData.validTypes);
         LevelWindow.HierarchyChange += () => _treeView.Reload();
     }
 

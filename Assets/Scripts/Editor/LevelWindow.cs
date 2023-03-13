@@ -25,6 +25,11 @@ public class LevelWindow : EditorWindow
         InitHandel();
     }
 
+    private void InitSo()
+    {
+        _so = new SerializedObject(_windowData);
+    }
+
     private void InitHandel()
     {
         _sceneViewHandel = new SceneViewHandel();
@@ -38,11 +43,6 @@ public class LevelWindow : EditorWindow
         _guiHandel.OnInputDown -= TryPlacePrefab;
         _sceneViewHandel.OnInputDown -= PlacePrefab;
         _sceneViewHandel.Disable();
-    }
-
-    private void InitSo()
-    {
-        _so = new SerializedObject(_windowData);
     }
 
     private bool GetWindowData()

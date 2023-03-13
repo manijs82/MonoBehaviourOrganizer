@@ -1,12 +1,15 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 public class PlaceableTreeView : TreeView
 {
     private ParentPaths _paths;
+    private List<Type> _validTypes;
     private List<GameObject> _currentList;
     private bool[] _objectListFoldouts;
     private Dictionary<GameObject, Component[]> _objectComponents;
@@ -14,8 +17,12 @@ public class PlaceableTreeView : TreeView
     private IList<int> _selectedIds;
     private Vector2 _scrollPos;
 
-    public PlaceableTreeView(TreeViewState state) : base(state)
+    public PlaceableTreeView(TreeViewState state, List<string> validTypeNames) : base(state)
     {
+        var monos = new ReflectedTypes<MonoBehaviour>();
+        _validTypes = new List<Type>();
+        foreach (var typeName in validTypeNames) 
+            _validTypes.Add(monos.GetTypeFromString(typeName));
         _currentList = new List<GameObject>();
         _objectComponents = new Dictionary<GameObject, Component[]>();
         _objectComponentFoldouts = new Dictionary<GameObject, bool[]>();
@@ -34,7 +41,9 @@ public class PlaceableTreeView : TreeView
         var rows = GetRows() ?? new List<TreeViewItem>(200);
 
         _paths ??= new ParentPaths();
-        var objs = Object.FindObjectsOfType<PlaceableObject>().ToList();
+        var objs = new List<Object>();
+        foreach (var type in _validTypes) 
+            objs.AddRange(Object.FindObjectsOfType(type));
         if (!_paths.AddObjects(objs))
             return rows;
 

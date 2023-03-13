@@ -10,7 +10,6 @@ public class GuiHandel
     private LevelWindowData _windowData;
     private Action _repaintAction;
     private SerializedObject _so;
-    private SerializedProperty _propPrefabs;
     private SerializedProperty _propOrientToNormal;
 
     private TabMode _tabMode;
@@ -22,12 +21,11 @@ public class GuiHandel
         _windowData = windowData;
         _repaintAction = repaintAction;
         _so = so;
-        _propPrefabs = _so.FindProperty(nameof(_windowData.prefabs));
         _propOrientToNormal = _so.FindProperty(nameof(_windowData.orientToNormal));
         _tabMode = (TabMode) EditorPrefs.GetInt("SelectedTab", 0);
 
         _placerTab = new PlacerTab(_windowData, _propOrientToNormal);
-        _prefabsTab = new PrefabsTab(_propPrefabs);
+        _prefabsTab = new PrefabsTab(_windowData, _so);
     }
 
     public void OnGUI()

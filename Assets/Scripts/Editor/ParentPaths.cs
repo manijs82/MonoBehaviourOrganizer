@@ -30,13 +30,13 @@ public class ParentPaths
         return null;
     }
 
-    public bool AddObjects(List<PlaceableObject> gos)
+    public bool AddObjects(List<Object> gos)
     {
         bool anyAdded = false;
-        gos = gos.OrderBy(g => g.transform.parent.gameObject.name).ToList();
+        gos = gos.OrderBy(g => ((Component)g).transform.parent.gameObject.name).ToList();
         foreach (var go in gos)
         {
-            if (AddObject(go.gameObject))
+            if (AddObject(((Component)go).gameObject))
                 if (!anyAdded) anyAdded = true;
         }
 
