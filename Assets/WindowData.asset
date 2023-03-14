@@ -13,9 +13,8 @@ MonoBehaviour:
   m_Name: WindowData
   m_EditorClassIdentifier: 
   prefabs:
-  - {fileID: 5910830103944148312, guid: cd98dab708538ee48ae4645a112a86b5, type: 3}
+  - {fileID: 1709229776708596160, guid: cd98dab708538ee48ae4645a112a86b5, type: 3}
   validTypes:
-  - Item
   - Placeable Object
   selectedPrefabIndex: 0
   orientToNormal: 1

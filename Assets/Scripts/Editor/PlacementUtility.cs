@@ -3,9 +3,9 @@ using UnityEngine;
 
 public static class PlacementUtility
 {
-    public static PlaceableObject PlacePrefab(PlaceableObject prefab, Transform parent, RaycastHit hit)
+    public static GameObject PlacePrefab(GameObject prefab, Transform parent, RaycastHit hit)
     {
-        var go = (PlaceableObject)PrefabUtility.InstantiatePrefab(prefab);
+        var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
         go.transform.position = hit.point;
         if (parent != null)
             go.transform.SetParent(parent);
