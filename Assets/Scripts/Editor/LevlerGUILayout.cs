@@ -41,7 +41,9 @@ public static class LevlerGUILayout
             property.SetValue(component,
                 EditorGUILayout.FloatField(property.Name, (float)property.GetValue(component)));
             if(EditorGUI.EndChangeCheck())
+            {
                 EditorUtility.SetDirty(component);
+            }
         }
     }
     

@@ -164,7 +164,7 @@ public class PlaceableTreeView : TreeView
         {
             if (_objectListFoldouts[index])
             {
-                var components = gameObject.GetComponents<Component>();
+                var components = gameObject.GetComponents<MonoBehaviour>();
                 var validComponents = new List<Component>();
 
                 foreach (var component in components)
