@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class GuiHandel
 {
+    public static event Action OnSwitchTabs;
     public event Action OnInputDown; 
 
     private LevelWindowData _windowData;
@@ -39,6 +40,7 @@ public class GuiHandel
         if (EditorGUI.EndChangeCheck())
         {
             EditorPrefs.SetInt("SelectedTab", (int) _tabMode);
+            OnSwitchTabs?.Invoke();
         }
 
         _so.ApplyModifiedProperties();

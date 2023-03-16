@@ -89,6 +89,6 @@ public class LevelWindow : EditorWindow
     void OnHierarchyChange()
     {
         HierarchyChange?.Invoke();
-        Repaint ();
+        Repaint();
     }
 }

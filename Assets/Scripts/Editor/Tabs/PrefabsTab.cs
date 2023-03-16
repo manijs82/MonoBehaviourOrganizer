@@ -24,9 +24,9 @@ public class PrefabsTab : WindowTab
             onAddDropdownCallback = OpenContextMenu,
             onRemoveCallback = list =>
             {
-                ReorderableList.defaultBehaviours.DoRemoveButton(list);
+                list.list.RemoveAt(list.index);
+                //list.serializedProperty.DeleteArrayElementAtIndex(list.index);
                 UpdatePrefabsList();
-                Debug.Log("VAR");
             },
             drawElementCallback = (rect, index, _, _) => EditorGUI.LabelField(rect, windowData.validTypes[index])
         };
@@ -39,7 +39,8 @@ public class PrefabsTab : WindowTab
             drawElementCallback = (rect, index, _, _) =>
             {
                 GUI.enabled = false;
-                EditorGUI.ObjectField(rect, windowData.prefabs[index], windowData.prefabs[index].GetType());
+                if(index < windowData.prefabs.Count)
+                    EditorGUI.ObjectField(rect, windowData.prefabs[index], windowData.prefabs[index].GetType(), false);
                 GUI.enabled = true;
             }
         };
@@ -65,9 +66,11 @@ public class PrefabsTab : WindowTab
     private void UpdatePrefabsList()
     {
         _prefabs.list.Clear();
-        var prefabs = GetPrefabsOfType(_monos.GetTypeFromString(_windowData.validTypes[0]));
+        var prefabs = new List<GameObject>();
+        foreach (var type in _windowData.validTypes) 
+            prefabs.AddRange(GetPrefabsOfType(_monos.GetTypeFromString(type)));
         foreach (var prefab in prefabs)
-            _prefabs.list.Add(prefab);
+            if(!_prefabs.list.Contains(prefab)) _prefabs.list.Add(prefab);
     }
 
     private List<GameObject> GetPrefabsOfType(Type type)

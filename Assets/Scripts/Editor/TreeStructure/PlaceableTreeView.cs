@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
@@ -27,6 +26,15 @@ public class PlaceableTreeView : TreeView
         _objectComponents = new Dictionary<GameObject, Component[]>();
         _objectComponentFoldouts = new Dictionary<GameObject, bool[]>();
         Reload();
+        
+        LevelWindow.HierarchyChange += Reload;
+        GuiHandel.OnSwitchTabs += () =>
+        {
+            _validTypes.Clear();
+            foreach (var typeName in validTypeNames) 
+                _validTypes.Add(monos.GetTypeFromString(typeName));
+            Reload();
+        };
     }
     
     protected override bool CanMultiSelect(TreeViewItem item) => false;
@@ -40,10 +48,10 @@ public class PlaceableTreeView : TreeView
     {
         var rows = GetRows() ?? new List<TreeViewItem>(200);
 
-        _paths ??= new ParentPaths();
         var objs = new List<Object>();
         foreach (var type in _validTypes) 
             objs.AddRange(Object.FindObjectsOfType(type));
+        _paths ??= new ParentPaths();
         if (!_paths.AddObjects(objs))
             return rows;
 
@@ -107,7 +115,7 @@ public class PlaceableTreeView : TreeView
         int i = 0;
         foreach (var gameObject in _currentList)
         {
-            if (gameObject == null)
+            if (gameObject == null || !HasValidType(gameObject))
             {
                 objectsToRemove.Add(gameObject);
                 continue;
@@ -152,6 +160,17 @@ public class PlaceableTreeView : TreeView
             if (_objectComponentFoldouts.ContainsKey(gameObject)) _objectComponentFoldouts.Remove(gameObject);
             _currentList.Remove(gameObject);
         }
+    }
+
+    private bool HasValidType(GameObject gameObject)
+    {
+        foreach (var type in _validTypes)
+        {
+            if (gameObject.GetComponent(type) != null)
+                return true;
+        }
+
+        return false;
     }
 
     private void DrawGameObject(GameObject gameObject, int index)
