@@ -32,6 +32,7 @@ public class LevelWindow : EditorWindow
 
     private void InitHandel()
     {
+        LevlerGUILayout.OpenRegistry();
         _sceneViewHandel = new SceneViewHandel();
         _guiHandel = new GuiHandel(_windowData, Repaint, _so);
         _sceneViewHandel.OnInputDown += PlacePrefab;
@@ -43,6 +44,7 @@ public class LevelWindow : EditorWindow
         _guiHandel.OnInputDown -= TryPlacePrefab;
         _sceneViewHandel.OnInputDown -= PlacePrefab;
         _sceneViewHandel.Disable();
+        LevlerGUILayout.CloseRegistry();
     }
 
     private bool GetWindowData()

@@ -138,10 +138,12 @@ public class PlaceableTreeView : TreeView
 
                     if (_objectComponentFoldouts[gameObject][compIndex])
                     {
+                        EditorGUI.indentLevel++;
                         var methods = component.GetMethods();
                         var props = component.GetProperties();
                         foreach (var method in methods) LevlerGUILayout.MethodGui(component, method);
                         foreach (var prop in props) LevlerGUILayout.PropertyGui(component, prop);
+                        EditorGUI.indentLevel--;
                     }
 
                     compIndex++;

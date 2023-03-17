@@ -1,16 +1,43 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
 public static class LevlerGUILayout
 {
-    private static Dictionary<PropertyInfo, float> _registeredFloats = new();
-
-    private static void RegisterFloatProperty(PropertyInfo propertyInfo)
+    private static Type[] _validTypes =
     {
-        _registeredFloats.Add(propertyInfo, 0);
+        typeof(float),
+        typeof(int),
+        typeof(Vector2),
+        typeof(Vector3),
+        typeof(Color),
+        typeof(string)
+    };
+
+    private static Dictionary<PropertyInfo, object> _registeredProperties;
+
+    private static void RegisterProperty(PropertyInfo propertyInfo)
+    {
+        if (_registeredProperties == null)
+        {
+            Debug.LogError("You are trying to add to a closed registry");
+            return;
+        }
+
+        _registeredProperties.Add(propertyInfo, default);
+    }
+
+    public static void OpenRegistry()
+    {
+        _registeredProperties = new Dictionary<PropertyInfo, object>();
+    }
+
+    public static void CloseRegistry()
+    {
+        _registeredProperties = null;
     }
 
     public static void MethodGui(Component component, MethodInfo method)
@@ -38,27 +65,49 @@ public static class LevlerGUILayout
 
     public static void PropertyGui(Component component, PropertyInfo property)
     {
-        if(!_registeredFloats.ContainsKey(property))
+        if (!_registeredProperties.ContainsKey(property))
         {
             var attribute = Attribute.GetCustomAttribute(property, typeof(LevelerPropertyAttribute));
             if (attribute == null) return;
 
             if (!property.CanRead && !property.CanWrite) return;
-            if (property.PropertyType == typeof(float))
-                RegisterFloatProperty(property);
+            if (_validTypes.Contains(property.PropertyType))
+                RegisterProperty(property);
         }
         else
         {
             EditorGUI.BeginChangeCheck();
-            _registeredFloats[property] = EditorGUILayout.FloatField(property.Name, _registeredFloats[property]);
-            if(EditorGUI.EndChangeCheck())
+            _registeredProperties[property] =
+                DisplayProperty(component, property);
+            if (EditorGUI.EndChangeCheck())
             {
-                EditorUtility.SetDirty(component);property.SetValue(component,
-                    EditorGUILayout.FloatField(property.Name, (float)property.GetValue(component)));
+                Undo.RecordObject(component, $"Change {property.Name}");
+                property.SetValue(component, _registeredProperties[property]);
             }
         }
     }
-    
+
+    private static object DisplayProperty(Component component, PropertyInfo property)
+    {
+        var type = property.PropertyType;
+        switch(type.Name) {
+            case "Single":
+                return EditorGUILayout.FloatField(property.Name, (float)property.GetValue(component));
+            case "Int32":
+                return EditorGUILayout.IntField(property.Name, (int)property.GetValue(component));
+            case "Color":
+                return EditorGUILayout.ColorField(property.Name, (Color)property.GetValue(component));
+            case "Vector2":
+                return EditorGUILayout.Vector2Field(property.Name, (Vector2)property.GetValue(component));
+            case "Vector3":
+                return EditorGUILayout.Vector3Field(property.Name, (Vector3)property.GetValue(component));
+            case "String":
+                return EditorGUILayout.TextField(property.Name, (string)property.GetValue(component));
+        }
+
+        return default;
+    }
+
     public static bool HasAttribute(this MemberInfo[] memberInfos)
     {
         foreach (var memberInfo in memberInfos)
@@ -77,10 +126,10 @@ public static class LevlerGUILayout
         return propAttribute != null || methodAttribute != null;
     }
 
-    public static MethodInfo[] GetMethods(this Component component) => 
+    public static MethodInfo[] GetMethods(this Component component) =>
         component.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 
-    public static PropertyInfo[] GetProperties(this Component component) => 
+    public static PropertyInfo[] GetProperties(this Component component) =>
         component.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 
     public static string GetPrettyName(this Component component) =>
