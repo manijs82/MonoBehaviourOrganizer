@@ -2,17 +2,28 @@ using UnityEngine;
 
 public class Item : MonoBehaviour
 {
-    [SerializeField] private string itemName;
+    [SerializeField] private float floatVar;
+    [SerializeField] private string stringVar;
+    [SerializeField] private Vector2 vector2Var;
 
-    [LevelerProperty] public string ItemName
+    [LevelerProperty] public float FloatVar
     {
-        get => itemName;
-        set => itemName = value;
+        get => floatVar;
+        set => floatVar = value;
     }
-
-    [LevelerMethod]
-    public void SetNameToFoo()
+    
+    [LevelerMethod] public void SetFloat(float value)
     {
-        itemName = "Foo";
+        floatVar = value;
+    }
+    
+    [LevelerMethod] public void SetString(string value)
+    {
+        stringVar = value;
+    }
+    
+    [LevelerMethod] public void SetVector2(Vector2 value)
+    {
+        vector2Var = value;
     }
 }

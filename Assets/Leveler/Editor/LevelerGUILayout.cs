@@ -20,6 +20,7 @@ namespace Leveler
         };
 
         private static Dictionary<PropertyInfo, object> _registeredProperties;
+        private static Dictionary<MethodInfo, List<object>> _registeredMethods;
 
         private static void RegisterProperty(PropertyInfo propertyInfo)
         {
@@ -31,37 +32,62 @@ namespace Leveler
 
             _registeredProperties.Add(propertyInfo, default);
         }
+        
+        private static void RegisterMethod(MethodInfo methodInfo)
+        {
+            if (_registeredMethods == null)
+            {
+                Debug.LogError("You are trying to add to a closed registry");
+                return;
+            }
+
+            var parameterInfos = methodInfo.GetParameters();
+            var objects = new List<object> { Capacity = parameterInfos.Length };
+            foreach (var parameterInfo in parameterInfos)
+                objects.Add(GetDefault(parameterInfo.ParameterType));
+            _registeredMethods.Add(methodInfo, objects);
+        }
 
         public static void OpenRegistry()
         {
             _registeredProperties = new Dictionary<PropertyInfo, object>();
+            _registeredMethods = new Dictionary<MethodInfo, List<object>>();
         }
 
         public static void CloseRegistry()
         {
             _registeredProperties = null;
+            _registeredMethods = null;
         }
 
         public static void MethodGui(Component component, MethodInfo method)
         {
-            var parameters = method.GetParameters();
-            if (parameters.Length == 0 && method.ReturnType == typeof(void))
+            if (!_registeredMethods.ContainsKey(method))
             {
-                if (GUILayout.Button(method.Name))
+                RegisterMethod(method);
+            }
+            else
+            {
+                var paramValues = _registeredMethods[method];
+                if (paramValues.Capacity == 0)
+                {
+                    if (GUILayout.Button(method.Name))
+                    {
+                        Undo.RecordObject(component, $"Invoke {method.Name}");
+                        method.Invoke(component, null);
+                    }
+                    return;
+                }
+
+                EditorGUILayout.BeginHorizontal();
+                for (int i = 0; i < paramValues.Count; i++) 
+                    paramValues[i] = DisplayMethod(paramValues, i);
+                if (GUILayout.Button(method.Name, GUILayout.Width(150)))
                 {
                     Undo.RecordObject(component, $"Invoke {method.Name}");
-                    method.Invoke(component, null);
+                    method.Invoke(component, paramValues.ToArray());
                 }
-                return;
-            }
-
-            if (parameters.Length != 1) return;
-
-            var param = parameters[0];
-            if (param.ParameterType == typeof(float))
-            {
-                EditorGUILayout.LabelField(method.Name);
-                method.Invoke(component, new object[] { EditorGUILayout.Slider(1, 0, 1) });
+                EditorGUILayout.EndHorizontal();
             }
         }
 
@@ -103,6 +129,28 @@ namespace Leveler
 
             return default;
         }
+        
+        private static object DisplayMethod(List<object> objects, int index)
+        {
+            var type = objects[index].GetType();
+            var label = $"Param{index}";
+            switch(type.Name) {
+                case "Single":
+                    return EditorGUILayout.FloatField(label, (float)objects[index]);
+                case "Int32":
+                    return EditorGUILayout.IntField(label, (int)objects[index]);
+                case "Color":
+                    return EditorGUILayout.ColorField(label, (Color)objects[index]);
+                case "Vector2":
+                    return EditorGUILayout.Vector2Field(label, (Vector2)objects[index]);
+                case "Vector3":
+                    return EditorGUILayout.Vector3Field(label, (Vector3)objects[index]);
+                case "String":
+                    return EditorGUILayout.TextField(label, (string)objects[index]);
+            }
+
+            return default;
+        }
 
         public static List<MethodInfo> GetValidMethods(Component component)
         {
@@ -111,6 +159,7 @@ namespace Leveler
             {
                 var attribute = Attribute.GetCustomAttribute(method, typeof(LevelerMethodAttribute));
                 if (attribute == null || method.IsSpecialName) continue;
+                if(method.GetParameters().Length > 2) continue;
                 
                 o.Add(method);
             }
@@ -160,5 +209,12 @@ namespace Leveler
 
         public static string GetPrettyName(this Component component) =>
             ObjectNames.NicifyVariableName(component.GetType().Name);
+        
+        private static object GetDefault(Type type)
+        {
+            if (type == typeof(string))
+                return "";
+            return Activator.CreateInstance(type);
+        }
     }
 }

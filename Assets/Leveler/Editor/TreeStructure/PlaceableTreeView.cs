@@ -17,10 +17,12 @@ namespace Leveler
         private Dictionary<GameObject, Component[]> _objectComponents;
         private Dictionary<GameObject, bool[]> _objectComponentFoldouts;
         private IList<int> _selectedIds;
-        private Vector2 _scrollPos;
+        private Vector2 _componentScrollPos;
+        private Vector2 _hierarchyScrollPos;
 
         public PlaceableTreeView(TreeViewState state, List<string> validTypeNames) : base(state)
         {
+            showBorder = true;
             var monos = new ReflectedTypes<MonoBehaviour>();
             _validTypes = new List<Type>();
             foreach (var typeName in validTypeNames)
@@ -129,16 +131,15 @@ namespace Leveler
 
             using (new GUILayout.HorizontalScope())
             {
+                base.OnGUI(treeRect);
+                
                 GUILayout.Space(rect.width / 3 + 3);
-
                 using (new GUILayout.VerticalScope())
                 {
-                    _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.ExpandWidth(true));
+                    _componentScrollPos = EditorGUILayout.BeginScrollView(_componentScrollPos, GUILayout.ExpandWidth(true));
                     DrawList();
                     EditorGUILayout.EndScrollView();
                 }
-
-                base.OnGUI(treeRect);
             }
         }
 
