@@ -269,18 +269,19 @@ namespace Leveler
             }
 
             GUI.enabled = true;
-            if (GUILayout.Button("Delete"))
-            {
-                if (_objectComponents.ContainsKey(gameObject)) _objectComponents.Remove(gameObject);
-                if (_objectComponentFoldouts.ContainsKey(gameObject)) _objectComponentFoldouts.Remove(gameObject);
-                Undo.DestroyObjectImmediate(gameObject);
-            }
+            
 
             if (GUILayout.Button("Select")) Selection.activeGameObject = gameObject;
             if (GUILayout.Button("Focus"))
             {
                 Selection.activeGameObject = gameObject;
                 SceneView.FrameLastActiveSceneView();
+            }
+            if (GUILayout.Button("Delete", GUILayout.MaxWidth(60)))
+            {
+                if (_objectComponents.ContainsKey(gameObject)) _objectComponents.Remove(gameObject);
+                if (_objectComponentFoldouts.ContainsKey(gameObject)) _objectComponentFoldouts.Remove(gameObject);
+                Undo.DestroyObjectImmediate(gameObject);
             }
         }
     }

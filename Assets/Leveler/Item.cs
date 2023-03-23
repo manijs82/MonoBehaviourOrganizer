@@ -16,6 +16,11 @@ public class Item : MonoBehaviour
     {
         floatVar = value;
     }
+
+    [LevelerMethod] public void PrintFloat()
+    {
+        print(floatVar);
+    }
     
     [LevelerMethod] public void SetString(string value)
     {
