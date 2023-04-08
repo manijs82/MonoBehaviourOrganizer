@@ -67,7 +67,8 @@ namespace Leveler
 
         private void UpdatePrefabsList()
         {
-            _prefabs.list.Clear();
+            if(_prefabs.list != null)
+                _prefabs.list.Clear();
             var prefabs = new List<GameObject>();
             foreach (var type in _windowData.validTypes) 
                 prefabs.AddRange(GetPrefabsOfType(_monos.GetTypeFromString(type)));

@@ -30,7 +30,7 @@ namespace Leveler
         {
             //if you want the abstract classes drop the !TheType.IsAbstract but it is probably to instance so its a good idea to keep it.
             return Assembly.GetAssembly(typeof(LevelerMethodAttribute)).GetTypes()
-                .Where(type => type.IsClass && !type.IsAbstract && type.IsSubclassOf(parentType)).ToArray();
+                .Where(type => type.IsClass && type.IsSubclassOf(parentType)).ToArray();
         }
     }
 }
