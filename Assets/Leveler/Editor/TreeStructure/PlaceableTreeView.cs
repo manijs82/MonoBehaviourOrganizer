@@ -84,6 +84,17 @@ namespace Leveler
 
         private void FindObjectsOfTypeInOrder(Transform root, List<Object> objs)
         {
+            
+            foreach (var type in _validTypes)
+            {
+                var component = root.GetComponent(type);
+                if(component != null)
+                {
+                    objs.Add(component);
+                    break;
+                }
+            }
+            
             for (int i = 0; i < root.childCount; i++)
             {
                 var go = root.GetChild(i);

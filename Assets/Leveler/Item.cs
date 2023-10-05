@@ -22,12 +22,12 @@ public class Item : MonoBehaviour
         print(floatVar);
     }
     
-    [LevelerMethod] public void SetString(string value)
+    public void SetString(string value)
     {
         stringVar = value;
     }
     
-    [LevelerMethod] public void SetVector2(Vector2 value)
+    public void SetVector2(Vector2 value)
     {
         vector2Var = value;
     }
