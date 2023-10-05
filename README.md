@@ -18,4 +18,7 @@ The Inspector for each gameobject is shown when you open the foldout of object. 
 Here the property FloatVar and the two methods SetFloat and PrintFloat are marked with my custom attribute and are shown in the inspector <br>
 
 # Placement Tool
+The Placement Tool is a simple click to place which places a selected prefab and orient it to the normal of the surface if you want.
 
+
+![PlacementTool](https://github.com/manijs82/MonoBehaviourOrganizer/assets/57400375/4e3ad1cc-5ba4-4f7e-b0a0-14f5f8a59688)
